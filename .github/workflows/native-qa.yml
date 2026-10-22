@@ -46,15 +46,25 @@ jobs:
           unzip -t "$RUNNER_TEMP/tingyin-emulator.zip" >emulator-archive-check.log
           unzip -q -o "$RUNNER_TEMP/tingyin-emulator.zip" -d "$ANDROID_HOME"
           yes | sdkmanager 'system-images;android-28;default;x86_64'  >sdk-install.log 2>&1 || { tail -n 50 sdk-install.log; exit 1; }
-          echo no | avdmanager create avd --force --name public-qa --path "$ANDROID_AVD_HOME/public-qa.avd" --package 'system-images;android-28;default;x86_64'
-          cat >> "$ANDROID_AVD_HOME/public-qa.avd/config.ini" <<'INI'
+          mkdir -p "$ANDROID_AVD_HOME/public-qa.avd"
+          printf 'avd.ini.encoding=UTF-8\npath=%s/public-qa.avd\ntarget=android-28\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/public-qa.ini"
+          cat > "$ANDROID_AVD_HOME/public-qa.avd/config.ini" <<INI
+          avd.ini.encoding=UTF-8
+          AvdId=public-qa
+          abi.type=x86_64
+          hw.cpu.arch=x86_64
+          hw.cpu.ncore=2
+          image.sysdir.1=$ANDROID_HOME/system-images/android-28/default/x86_64/
           hw.lcd.width=1080
           hw.lcd.height=2400
           hw.lcd.density=420
           hw.ramSize=2048
           hw.keyboard=yes
+          hw.gpu.enabled=yes
+          hw.gpu.mode=swiftshader_indirect
           hw.camera.back=none
           hw.camera.front=none
+          disk.dataPartition.size=6442450944
           INI
           acceleration=off
           if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then acceleration=on; fi
