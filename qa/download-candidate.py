@@ -15,7 +15,7 @@ root.mkdir(exist_ok=True)
 
 def fetch(name):
     request = Request('https://tingyin-public.0876543.xyz/qa/candidate/' + name,
-                      headers={'Authorization': authorization})
+                      headers={'Authorization': authorization, 'User-Agent': 'Tingyin-Public-Native-QA/1.0 (+https://github.com/lei0620/tingyin-public)'})
     try:
         with urlopen(request, timeout=120) as response:
             data = response.read()
