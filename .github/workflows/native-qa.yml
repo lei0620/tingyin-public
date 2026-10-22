@@ -25,6 +25,10 @@ jobs:
           for value in json.load(open(os.environ['GITHUB_EVENT_PATH']))['inputs'].values():
               print('::add-mask::'+value)
           PY
+      - name: Check public service connectivity
+        run: |
+          curl -sS -i --max-time 30 https://tingyin-public.0876543.xyz/health | head -c 1200
+          curl -sS -i --max-time 30 https://tingyin-public.lei0620.workers.dev/health | head -c 1200
       - name: Download exact signed candidate
         run: python3 qa/download-candidate.py
       - name: Prepare isolated Android 28 device

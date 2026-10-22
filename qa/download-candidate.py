@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from concurrent.futures import ThreadPoolExecutor
 
 inputs = json.load(open(os.environ['GITHUB_EVENT_PATH']))['inputs']
@@ -15,8 +16,13 @@ root.mkdir(exist_ok=True)
 def fetch(name):
     request = Request('https://tingyin-public.0876543.xyz/qa/candidate/' + name,
                       headers={'Authorization': authorization})
-    with urlopen(request, timeout=120) as response:
-        data = response.read()
+    try:
+        with urlopen(request, timeout=120) as response:
+            data = response.read()
+    except HTTPError as error:
+        detail=error.read(800).decode(errors='replace').replace(authorization,'[QA authorization]').replace(inputs['dav_password'],'[QA password]')
+        print('Candidate HTTP diagnostic:',error.code,error.headers.get('Server'),detail)
+        raise
     (root / name).write_bytes(data)
     return data
 
