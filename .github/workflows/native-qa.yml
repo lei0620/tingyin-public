@@ -28,7 +28,14 @@ jobs:
       - name: Download exact signed candidate
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download qa-native-candidate --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --dir candidate
+        run: |
+          gh release download qa-native-candidate --repo "$GITHUB_REPOSITORY" --pattern 'app-release.apk.part*' --pattern 'candidate-manifest.json' --pattern 'app-release-androidTest.apk' --dir candidate
+          python3 - <<'PY'
+          import pathlib,json,hashlib
+          root=pathlib.Path('candidate');m=json.loads((root/'candidate-manifest.json').read_text());parts=sorted(root.glob('app-release.apk.part*'));assert len(parts)==m['parts']
+          data=b''.join(p.read_bytes() for p in parts);assert len(data)==m['bytes'] and hashlib.sha256(data).hexdigest()==m['sha256'];(root/'app-release.apk').write_bytes(data)
+          print('Exact candidate APK SHA-256 verified')
+          PY
       - name: Prepare isolated Android 28 device
         run: |
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
