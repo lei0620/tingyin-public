@@ -1,0 +1,64 @@
+name: Public Android native acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      voucher:
+        description: Disposable QA order only; revoked after acceptance
+        required: true
+      dav_password:
+        description: Temporary synthetic WebDAV fixture password
+        required: true
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - name: Mask disposable test inputs
+        run: |
+          python3 - <<'PY'
+          import os,json
+          for value in json.load(open(os.environ['GITHUB_EVENT_PATH']))['inputs'].values():
+              print('::add-mask::'+value)
+          PY
+      - name: Download exact signed candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download qa-native-candidate --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --dir candidate
+      - name: Prepare isolated Android 28 device
+        run: |
+          sdkmanager 'system-images;android-28;default;x86_64' >sdk-install.log 2>&1
+          echo no | avdmanager create avd --force --name public-qa --package 'system-images;android-28;default;x86_64'
+          cat >> "$HOME/.android/avd/public-qa.avd/config.ini" <<'INI'
+          hw.lcd.width=1080
+          hw.lcd.height=2400
+          hw.lcd.density=420
+          hw.ramSize=2048
+          hw.keyboard=yes
+          hw.camera.back=none
+          hw.camera.front=none
+          INI
+          acceleration=off
+          if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then acceleration=on; fi
+          "$ANDROID_HOME/emulator/emulator" -avd public-qa -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel "$acceleration" -cores 2 -memory 2048 -feature -Vulkan -port 5580 >emulator.log 2>&1 &
+          timeout 900s bash -c 'until adb -s emulator-5580 shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" | grep -qx 1; do sleep 5; done'
+          adb -s emulator-5580 shell input keyevent 82
+      - name: Run release application acceptance
+        run: python3 qa/run-native.py
+      - name: Collect native evidence
+        if: always()
+        run: |
+          mkdir -p native-evidence
+          adb -s emulator-5580 pull /sdcard/Android/data/icu.lei2025.tingyin.publicapp/files/public-native/. native-evidence/ || true
+          adb -s emulator-5580 logcat -d -s AndroidRuntime:E >native-evidence/android-runtime.log || true
+          cp emulator.log native-evidence/ || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-native-evidence
+          path: native-evidence/
+          retention-days: 7
