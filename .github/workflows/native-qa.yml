@@ -31,6 +31,7 @@ jobs:
         run: gh release download qa-native-candidate --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --dir candidate
       - name: Prepare isolated Android 28 device
         run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           sdkmanager 'system-images;android-28;default;x86_64' >sdk-install.log 2>&1
           echo no | avdmanager create avd --force --name public-qa --package 'system-images;android-28;default;x86_64'
           cat >> "$HOME/.android/avd/public-qa.avd/config.ini" <<'INI'
