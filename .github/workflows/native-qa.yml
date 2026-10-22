@@ -36,7 +36,7 @@ jobs:
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           export ANDROID_USER_HOME="$RUNNER_TEMP/tingyin-android"
-          export ANDROID_EMULATOR_HOME="$RUNNER_TEMP/tingyin-emulator"
+          export ANDROID_EMULATOR_HOME="$ANDROID_USER_HOME"
           export ANDROID_AVD_HOME="$RUNNER_TEMP/tingyin-avd"
           mkdir -p "$ANDROID_USER_HOME" "$ANDROID_EMULATOR_HOME" "$ANDROID_AVD_HOME"
           echo "ANDROID_USER_HOME=$ANDROID_USER_HOME" >> "$GITHUB_ENV"
@@ -66,6 +66,7 @@ jobs:
           hw.camera.front=none
           disk.dataPartition.size=6442450944
           INI
+          adb start-server
           acceleration=off
           if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then acceleration=on; fi
           "$ANDROID_HOME/emulator/emulator" -avd public-qa -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel "$acceleration" -cores 2 -memory 2048 -feature -Vulkan -port 5580 >emulator.log 2>&1 &
@@ -77,6 +78,7 @@ jobs:
         if: always()
         run: |
           mkdir -p native-evidence
+          adb devices -l >native-evidence/device-status.txt 2>&1 || true
           timeout 15s adb -s emulator-5580 pull /sdcard/Android/data/icu.lei2025.tingyin.publicapp/files/public-native/. native-evidence/ || true
           timeout 15s adb -s emulator-5580 logcat -d -s AndroidRuntime:E >native-evidence/android-runtime.log || true
           cp emulator.log sdk-install.log native-evidence/ 2>/dev/null || true
