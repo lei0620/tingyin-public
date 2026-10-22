@@ -42,7 +42,10 @@ jobs:
           echo "ANDROID_USER_HOME=$ANDROID_USER_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_EMULATOR_HOME=$ANDROID_EMULATOR_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
-          yes | sdkmanager 'emulator' 'system-images;android-28;default;x86_64' >sdk-install.log 2>&1 || { tail -n 50 sdk-install.log; exit 1; }
+          curl --fail --location --retry 3 --max-time 300 https://dl.google.com/android/repository/emulator-linux_x64-9322596.zip --output "$RUNNER_TEMP/tingyin-emulator.zip"
+          unzip -t "$RUNNER_TEMP/tingyin-emulator.zip" >emulator-archive-check.log
+          unzip -q -o "$RUNNER_TEMP/tingyin-emulator.zip" -d "$ANDROID_HOME"
+          yes | sdkmanager 'system-images;android-28;default;x86_64'  >sdk-install.log 2>&1 || { tail -n 50 sdk-install.log; exit 1; }
           echo no | avdmanager create avd --force --name public-qa --path "$ANDROID_AVD_HOME/public-qa.avd" --package 'system-images;android-28;default;x86_64'
           cat >> "$ANDROID_AVD_HOME/public-qa.avd/config.ini" <<'INI'
           hw.lcd.width=1080
