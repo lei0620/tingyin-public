@@ -21,5 +21,5 @@ for value in inputs.values():
     output = output.replace(value, '[disposable QA value]')
 pathlib.Path('native-evidence/instrumentation.txt').write_text(output)
 print(output)
-if result.returncode or 'OK (2 tests)' not in output or 'FAILURES!!!' in output:
+if result.returncode or 'OK (3 tests)' not in output or 'FAILURES!!!' in output:
     raise SystemExit('Native acceptance did not pass')
