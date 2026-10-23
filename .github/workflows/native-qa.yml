@@ -58,7 +58,8 @@ jobs:
           hw.lcd.width=1080
           hw.lcd.height=2400
           hw.lcd.density=420
-          hw.ramSize=2048
+          hw.ramSize=3072
+          hw.gsmModem=no
           hw.keyboard=yes
           hw.gpu.enabled=yes
           hw.gpu.mode=swiftshader_indirect
@@ -69,7 +70,7 @@ jobs:
           adb start-server
           acceleration=off
           if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then acceleration=on; fi
-          "$ANDROID_HOME/emulator/emulator" -avd public-qa -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel "$acceleration" -cores 2 -memory 2048 -feature -Vulkan -port 5580 >emulator.log 2>&1 &
+          "$ANDROID_HOME/emulator/emulator" -avd public-qa -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel "$acceleration" -cores 2 -memory 3072 -feature -Vulkan -port 5580 >emulator.log 2>&1 &
           timeout 900s bash -c 'until adb -s emulator-5580 shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" | grep -qx 1; do sleep 5; done'
           adb -s emulator-5580 shell input keyevent 82
       - name: Run release application acceptance
